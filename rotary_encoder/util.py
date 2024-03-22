@@ -3,7 +3,7 @@ from pcbnew import FromMM
 import numpy as np
 
 
-def draw_polyshape(chains, invert=False):
+def draw_polyshape(chains, invert=False) -> None:
     """
     Create a compound polyshape from a list of closed chain objects
     """
@@ -24,7 +24,7 @@ def draw_polyshape(chains, invert=False):
     pcbnew.Refresh()
 
 
-def invert_polyshape(sps):
+def invert_polyshape(sps) -> pcbnew.SHAPE_POLY_SET:
     """
     Creates a rectangular shape of equal size to the provided polyshape and subtracts the polyshape from the rectangle
     """
@@ -50,6 +50,18 @@ def get_encoder_ring(r_inner:float, width:float, sections:int, origin_x:float = 
     return chains
 
 
+def get_concentric_rings(r_inner:float, r_delta:float, width:float, n:int, origin_x:float = 0, origin_y:float = 0) -> list[pcbnew.SHAPE_LINE_CHAIN]:
+    """
+    Draw n concentric rings and return a list of chain objects
+    """
+    offset = width/2
+    chains = []
+    for i in range(n):
+        ri = (r_inner + (r_delta*i)) - offset
+        chains += [get_ring(ri, width, origin_x, origin_y)]
+    return chains
+
+
 def get_ring(r_inner:float, width:float, origin_x:float = 0, origin_y:float = 0) -> pcbnew.SHAPE_LINE_CHAIN:
     """
     Create a continuous ring shape
@@ -59,7 +71,7 @@ def get_ring(r_inner:float, width:float, origin_x:float = 0, origin_y:float = 0)
 
 def get_arch(r_inner:float, width:float, angle:float, rotation:float = 0, origin_x:float = 0, origin_y:float = 0) -> pcbnew.SHAPE_LINE_CHAIN:
     """
-    Creates the vertices for a closed rainbow like shape
+    Creates the vertices for an arch, a rainbow like shape
     """
     steps = int( np.ceil(angle/6) ) * 2
     angle = (angle/360)*2*np.pi
@@ -80,7 +92,7 @@ def get_arch(r_inner:float, width:float, angle:float, rotation:float = 0, origin
 
 def to_chain(verteces:list[tuple]) -> pcbnew.SHAPE_LINE_CHAIN:
     """
-    Turn a list of verteces defined as x,y coordinates into a chain object for appending to a polyshape
+    Turn a list of verteces defined as tuples of x,y coordinates into a chain object for appending to a polyshape
     """
     chain = pcbnew.SHAPE_LINE_CHAIN()
     for (x,y) in verteces:
@@ -90,12 +102,24 @@ def to_chain(verteces:list[tuple]) -> pcbnew.SHAPE_LINE_CHAIN:
 
 
 def to_gray(v:int, bits:int) -> int:
+    """
+    Convert an integer value to its gray encoded counterpart
+
+    :param v: The value to be encoded
+    :param bits: The resolution of the value in number of bits
+    """
     gray = v ^ (v >> 1)
     gray |=  (v & (1<<(bits-1)))
     return gray
 
 
 def from_gray(v:int, bits:int) -> int:
+    """
+    Convert a gray encoded value to its binary encoded counterpart
+
+    :param v: The gray value to be decoded
+    :param bits: The resolution of the value in number of bits
+    """
     bits -= 1
     b = v & (1<<bits)
     while bits > 0:
