@@ -34,3 +34,24 @@ def draw_encoder(r_inner:float=3, widths:float=2, bits:int=4, mask:float=0, orig
             chains += [util.get_ring(ri + window_width, mask_width, origin_x, origin_y)]
 
     util.draw_polyshape(chains, invert)
+
+
+def gray_encoder(r_inner:float, width:float, bits:int, origin_x:float = 0, origin_y:float = 0):
+    """
+    Used for the creation of gray coded encoders, which are created per pie section, rather then per ring
+    """
+    angle = 360/(2**bits)
+    chains = []
+
+    for i in range(2**bits):
+        phase = i * angle
+        graycode = util.to_gray(i, bits)
+
+        # Draw graycode sections from msb(inner) to lsb(outer)
+        for bit in range(bits):
+            # Draw a section
+            if graycode & (1 << (bits-bit-1)):
+                ri = r_inner + (width * bit)
+                chains += [util.get_arch(ri, width, angle, phase, origin_x, origin_y)]
+
+    util.draw_polyshape(chains)

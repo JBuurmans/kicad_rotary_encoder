@@ -38,7 +38,7 @@ def invert_polyshape(sps):
     return container
 
 
-def get_encoder_ring(r_inner:float, width:float, sections:int, origin_x:float = 0, origin_y:float = 0):
+def get_encoder_ring(r_inner:float, width:float, sections:int, origin_x:float = 0, origin_y:float = 0) -> list[pcbnew.SHAPE_LINE_CHAIN]:
     """
     Draw a ring with a specified number of equally spaced sections
     """
@@ -46,28 +46,18 @@ def get_encoder_ring(r_inner:float, width:float, sections:int, origin_x:float = 
     chains = list()
 
     for i in range(sections):
-        verteces = get_ring_section(r_inner, width, angle=angle/2, rotation=angle*i, origin_x=origin_x, origin_y=origin_y)
-        chains.append( to_chain(verteces) )
+        chains.append( get_arch(r_inner, width, angle=angle/2, rotation=angle*i, origin_x=origin_x, origin_y=origin_y) )
     return chains
 
 
-def get_ring(r_inner, width, origin_x, origin_y):
-    verteces = get_ring_section(r_inner, width, angle=360, rotation=0, origin_x=origin_x, origin_y=origin_y)
-    return to_chain(verteces)
-
-
-def to_chain(verteces:list[tuple]):
+def get_ring(r_inner:float, width:float, origin_x:float = 0, origin_y:float = 0) -> pcbnew.SHAPE_LINE_CHAIN:
     """
-    Turn a list of verteces x,y coordinates into a chain object for appending to a polyshape
+    Create a continuous ring shape
     """
-    chain = pcbnew.SHAPE_LINE_CHAIN()
-    for (x,y) in verteces:
-        chain.Append(x, y)
-    chain.SetClosed(True)
-    return chain
+    return get_arch(r_inner, width, angle=360, rotation=0, origin_x=origin_x, origin_y=origin_y)
 
 
-def get_ring_section(r_inner:float, width:float, angle:float, rotation:float = 0, origin_x:float = 0, origin_y:float =0):
+def get_arch(r_inner:float, width:float, angle:float, rotation:float = 0, origin_x:float = 0, origin_y:float = 0) -> pcbnew.SHAPE_LINE_CHAIN:
     """
     Creates the vertices for a closed rainbow like shape
     """
@@ -85,4 +75,30 @@ def get_ring_section(r_inner:float, width:float, angle:float, rotation:float = 0
     x = [FromMM(float(v)) for v in x] 
     y = [FromMM(float(v)) for v in y]
 
-    return list(zip(x,y))
+    return to_chain( list(zip(x,y)) )
+
+
+def to_chain(verteces:list[tuple]) -> pcbnew.SHAPE_LINE_CHAIN:
+    """
+    Turn a list of verteces defined as x,y coordinates into a chain object for appending to a polyshape
+    """
+    chain = pcbnew.SHAPE_LINE_CHAIN()
+    for (x,y) in verteces:
+        chain.Append(x, y)
+    chain.SetClosed(True)
+    return chain
+
+
+def to_gray(v:int, bits:int) -> int:
+    gray = v ^ (v >> 1)
+    gray |=  (v & (1<<(bits-1)))
+    return gray
+
+
+def from_gray(v:int, bits:int) -> int:
+    bits -= 1
+    b = v & (1<<bits)
+    while bits > 0:
+        bits -= 1
+        b |= ((b >> 1) ^ v) & (1<<bits)
+    return b
